@@ -1,3 +1,6 @@
+// SOURCE:
+// https://github.com/kdeyko/gas-tinkoff-trades
+
 const scriptProperties = PropertiesService.getScriptProperties()
 const CACHE = CacheService.getScriptCache()
 
@@ -52,12 +55,30 @@ class TinkoffClient {
 const tinkoffClient = new TinkoffClient(OPENAPI_TOKEN)
 
 function _getFigiByTicker(ticker) {
-  const cached = CACHE.get(ticker)
-  if (cached != null) 
+  const cached = CACHE.get(ticker + '_figi')
+  if (cached != null)
     return cached
   const {figi} = tinkoffClient.getInstrumentByTicker(ticker)
-  CACHE.put(ticker, figi)
+  CACHE.put(ticker + '_figi', figi)
   return figi
+}
+
+function getNameByTicker(ticker) {
+  const cached = CACHE.get(ticker + '_name')
+  if (cached != null)
+    return cached
+  const {name} = tinkoffClient.getInstrumentByTicker(ticker)
+  CACHE.put(ticker + '_name', name)
+  return name
+}
+
+function getCurrencyByTicker(ticker) {
+  const cached = CACHE.get(ticker + '_currency')
+  if (cached != null)
+    return cached
+  const {currency} = tinkoffClient.getInstrumentByTicker(ticker)
+  CACHE.put(ticker + '_currency', currency)
+  return currency
 }
 
 function getPriceByTicker(ticker, dummy) {
