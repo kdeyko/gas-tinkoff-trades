@@ -19,13 +19,21 @@
 
 ## Функции
 
-* `=getPriceByTicker(ticker, dummy)` - требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80), и опциональный параметр `dummy`. Для автоматичекого обновления необходимо указать в качестве `dummy` ячейку `Z1`. 
+* `=getPriceByTicker(ticker, dummy)` - Получить последнюю цену (`lastPrice`) указанного инструмента по тикеру. Требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80) и опциональный параметр `dummy`. Для автоматичекого обновления необходимо указать в качестве `dummy` ячейку `Z1`. 
 
-* `=getNameByTicker(ticker, dummy)` - требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80).
+* `=getNameByTicker(ticker, dummy)` - Получить имя указанного инструмента по тикеру. Требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80) и опциональный параметр `dummy`. Для автоматичекого обновления необходимо указать в качестве `dummy` ячейку `Z1`. 
 
-* `=getCurrencyByTicker(ticker, dummy)` - требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80).
+* `=getCurrencyByTicker(ticker, dummy)` - Получить валюту (`currency`) указанного инструмента по тикеру. Требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80) и опциональный параметр `dummy`. Для автоматичекого обновления необходимо указать в качестве `dummy` ячейку `Z1`. 
 
-* `=getTrades(ticker, from, to)` - требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80), и опционально фильтрацию по времени. Параметры `from` и `to` являются строками и должны быть в [ISO 8601 формате](https://ru.wikipedia.org/wiki/ISO_8601)
+* `=getTrades(ticker, from, to)` - требует на вход [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80) и опционально фильтрацию по времени. Параметры `from` и `to` являются строками и должны быть в [ISO 8601 формате](https://ru.wikipedia.org/wiki/ISO_8601)
+---
+**NOTA BENE**: Следующие функции работают непосредственно с портфелем пользователя. Данные о портфеле собираются одним запросом и хранятся в кэше (см. переменную `EXPIRATION_IN_SECONDS`, по умолчанию 10 сек).
+
+* `=getAccounts()` - Вспомогательная функция для получения счетов (`brokerAccountType`,`brokerAccountId`) пользователя: брокерские и ИИС. 
+
+* `getAccountBalanceByTicker(accountId, ticker, dummy)` - Получить баланс указанного инструмента в указанном аккаунте по тикеру и accountId. Требует на вход `accountId` (можно получить с помощью функции `getAccounts()`), [тикер](https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BA%D0%B5%D1%80) и опциональный параметр `dummy`. Для автоматичекого обновления необходимо указать в качестве `dummy` ячейку `Z1`. 
+
+* `getAccountBalanceByCurrency(accountId, currency, dummy)` - Получить баланс указанной валюты в указанном аккаунте по имени валюты и accountId. Требует на вход `accountId` (можно получить с помощью функции `getAccounts()`), `currency` (RUB, USD, EUR, etc.) и опциональный параметр `dummy`. Для автоматичекого обновления необходимо указать в качестве `dummy` ячейку `Z1`. 
 
 ## Особенности
 
