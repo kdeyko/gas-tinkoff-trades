@@ -3,6 +3,8 @@
 
 const scriptProperties = PropertiesService.getScriptProperties()
 const CACHE = CacheService.getScriptCache()
+// How long the portfolio data will stay cached. Change this var to some bigger value if you are hitting API limits
+const EXPIRATION_IN_SECONDS = 10
 
 const OPENAPI_TOKEN = scriptProperties.getProperty('OPENAPI_TOKEN')
 const TRADING_START_AT = new Date('Apr 01, 2020 10:00:00')
@@ -31,7 +33,25 @@ class TinkoffClient {
     if (response.getResponseCode() == 200)
       return JSON.parse(response.getContentText())
   }
-  
+
+  getbrokerAccountIds() {
+    const url = 'user/accounts'
+    const data = this._makeApiCall(url)
+    return data.payload.accounts
+  }
+
+  getPortfolio(brokerAccountId) {
+    const url = `portfolio?brokerAccountId=${brokerAccountId}`
+    const data = this._makeApiCall(url)
+    return data.payload.positions
+  }
+
+  getPortfolioCurrencies(brokerAccountId) {
+    const url = `portfolio/currencies?brokerAccountId=${brokerAccountId}`
+    const data = this._makeApiCall(url)
+    return data.payload.currencies
+  }
+
   getInstrumentByTicker(ticker) {
     const url = `market/search/by-ticker?ticker=${ticker}`
     const data = this._makeApiCall(url)
@@ -63,7 +83,46 @@ function _getFigiByTicker(ticker) {
   return figi
 }
 
-function getNameByTicker(ticker) {
+function _getPortfolioByAccountId(brokerAccountId) {
+  const cached = CACHE.get(brokerAccountId + '_portfolio')
+  if (cached != null)
+    return cached
+  const portfolio = JSON.stringify(tinkoffClient.getPortfolio(brokerAccountId))
+  CACHE.put(brokerAccountId + '_portfolio', portfolio, EXPIRATION_IN_SECONDS)
+  return portfolio
+}
+
+function _getCurrenciesByAccountId(brokerAccountId) {
+  const cached = CACHE.get(brokerAccountId + '_currencies')
+  if (cached != null)
+    return cached
+  const currencies = JSON.stringify(tinkoffClient.getPortfolioCurrencies(brokerAccountId))
+  CACHE.put(brokerAccountId + '_currencies', currencies, EXPIRATION_IN_SECONDS)
+  return currencies
+}
+
+function getAccountBalanceByCurrency(accountId, currency, dummy) {
+  const currencies = JSON.parse(_getCurrenciesByAccountId(accountId))
+  const balance = currencies.find(x => x.currency === currency).balance
+  return balance
+}
+
+function getAccountBalanceByTicker(accountId, ticker, dummy) {
+  const portfolio = JSON.parse(_getPortfolioByAccountId(accountId))
+  const balance = portfolio.find(x => x.ticker === ticker).balance
+  return balance
+}
+
+function getAccounts() {
+  const cached = CACHE.get('brokerAccounts')
+  if (cached != null)
+    return cached
+  const brokerAccounts = JSON.stringify(tinkoffClient.getbrokerAccountIds())
+  CACHE.put('brokerAccounts', brokerAccounts)
+  return brokerAccounts
+}
+
+function getNameByTicker(ticker, dummy) {
   const cached = CACHE.get(ticker + '_name')
   if (cached != null)
     return cached
@@ -72,7 +131,7 @@ function getNameByTicker(ticker) {
   return name
 }
 
-function getCurrencyByTicker(ticker) {
+function getCurrencyByTicker(ticker, dummy) {
   const cached = CACHE.get(ticker + '_currency')
   if (cached != null)
     return cached
