@@ -6,7 +6,7 @@ const CACHE = CacheService.getScriptCache()
 // How long the portfolio data will stay cached. Change this var to some bigger value if you are hitting API limits
 const EXPIRATION_IN_SECONDS = 10
 
-const OPENAPI_TOKEN = scriptProperties.getProperty('OPENAPI_TOKEN')
+const API_TOKEN = scriptProperties.getProperty('API_TOKEN')
 const TRADING_START_AT = new Date('Apr 01, 2020 10:00:00')
 const MILLIS_PER_DAY = 1000 * 60 * 60 * 24
 
@@ -72,7 +72,7 @@ class TinkoffClient {
   }
 }
 
-const tinkoffClient = new TinkoffClient(OPENAPI_TOKEN)
+const tinkoffClient = new TinkoffClient(API_TOKEN)
 
 function _getFigiByTicker(ticker) {
   const cached = CACHE.get(ticker + '_figi')
