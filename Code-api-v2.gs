@@ -18,20 +18,35 @@ const tAPI = new TinkoffApp({
 /* ####################################################################################################### */
 
 function _apiRequest(cache, apiMethod, methodArgs = []) {
+  let statusCacheKey
   if (cache.length) {
     var [cacheKey, cacheExpireTime] = cache
-    const cached = CACHE.get(cacheKey)
-    if (cached != null) {
-      Logger.log(`cacheKey ${cacheKey} found: ${cached}`)
-      return JSON.parse(cached)
+    statusCacheKey = 'status_' + cacheKey
+
+    if (CACHE.get(statusCacheKey) === 'ready') {
+      const cached = CACHE.get(cacheKey)
+      if (cached != null) {
+        Logger.log(`cacheKey ${cacheKey} found: ${cached}`)
+        return JSON.parse(cached)
+      }
     }
     Logger.log(`cacheKey ${cacheKey} NOT found`)
+
+    while (CACHE.get(statusCacheKey) === 'in-progress') {
+      Utilities.sleep(500);
+    }
+    Logger.log(`Setting ${statusCacheKey} to IN-PROGRESS`)
+    CACHE.put(statusCacheKey, 'in-progress')
   }
+
   const [v1='', v2='', v3=''] = methodArgs
   const result = tAPI[apiMethod](v1, v2, v3)
 
-  if (cache.length)
+  if (cache.length) {
     CACHE.put(cacheKey, JSON.stringify(result), cacheExpireTime)
+    Logger.log(`Setting ${statusCacheKey} to READY`)
+    CACHE.put(statusCacheKey, 'ready', cacheExpireTime)
+  }
   return result
 }
 
@@ -134,10 +149,26 @@ function getAccounts() {
 // dummy attribute is used for auto-refreshing the value each time the sheet is updating.
 // see https://stackoverflow.com/a/27656313
 function getAccountBalanceByCurrency(accountId, currency, dummy) {
-  const positions = _getPositions(accountId).money
-  const units = Number(positions.find(x => x.currency === currency.toLowerCase()).units) || 0
-  const nano = positions.find(x => x.currency === currency.toLowerCase()).nano || 0
-  return _quotationToNumber(units, nano)
+  currency = currency.toLowerCase()
+  // const positions = _getPositions(accountId).money
+  const positions = _getPositions(accountId)
+  const money = positions.money
+  let blocked = positions.blocked || []
+  let blocked_currency = blocked.find(x => x.currency === currency)
+  if (blocked === [] || blocked_currency === undefined) {
+    let dummy_object = new Object()
+    dummy_object.currency = currency
+    dummy_object.units = 0
+    dummy_object.nano = 0
+    blocked.push(dummy_object)
+  } else {
+
+  }
+  const units = (Number(money.find(x => x.currency === currency).units) || 0) + (Number(blocked.find(x => x.currency === currency).units) || 0)
+  const nano = (money.find(x => x.currency === currency).nano || 0) + (blocked.find(x => x.currency === currency).nano || 0)
+  const result = _quotationToNumber(units, nano)
+  Logger.log(`Available balance of ${currency} on ${accountId} account is: ${result}`)
+  return result
 }
 
 function getAccountBalanceByTicker(accountId, ticker, dummy) {
@@ -157,15 +188,6 @@ function getNameByTicker(ticker, dummy) {
 }
 
 function getPriceByTicker(ticker, dummy) {
-  // Workaround for warming up caches
-  // https://webapps.stackexchange.com/a/153147
-  var last = CACHE.get('running');
-  while (last  != null) {
-    Utilities.sleep(500);
-    last = CACHE.get('running');
-  }
-  CACHE.put('running', 'TRUE', 1); // This data will be cached for just 1 second
-
   const figi = _getFigiByTicker(ticker)
   const figiList = _getMyFigiList()
   let lastPrices
